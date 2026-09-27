@@ -349,7 +349,7 @@ function act(name,...args){
   const S=clone(state);
   const res=A[name](S,meId,...args)||{};
   if(res.err){toast(res.err);return res;}
-  S.v=(state.v||0)+1;
+  S.v=(state.v||0)+1;S.w=meId+'.'+Math.random().toString(36).slice(2,7);
   state=S;
   if(res.peek)ui.peek={title:'Kamu mengintip',cards:res.peek};
   if(res.wrong)toast('Salah banting! Kamu dapat 1 kartu hukuman.');
@@ -449,7 +449,7 @@ function renderInner(){
   renderOverlay();
 }
 function header(){
-  const badge=mode==='db'?'Meja bersama':mode==='p2p'?('Room '+(net.code||'')):mode==='p2p-setup'?'File mandiri':'';
+  const badge=mode==='db'?'Meja bersama':mode==='p2p'?('Room '+(net.code||'')+(net.status==='retry'?' · menyambung ulang…':' · terhubung')):mode==='p2p-setup'?'File mandiri':'';
   return h('div',{class:'top'},
     h('div',{class:'brand'},h('h1',{},'Cambio',h('span',{},'.')),state&&state.round?h('span',{class:'badge'},'Ronde '+state.round):null),
     badge?h('span',{class:'badge'},badge):null);
@@ -465,7 +465,7 @@ function lobbyView(){
   p.append(h('h2',{},S.phase==='roundEnd'?'Ikut ronde berikutnya':'Lobi meja'));
   p.append(h('p',{class:'muted small'},mode==='db'
     ?'Semua orang yang membuka halaman ini melihat meja yang sama. Duduk, tunggu teman, lalu host memulai ronde. 2–4 pemain.'
-    :'Bagikan kode room kepada temanmu. Mereka membuka file yang sama, memilih Gabung, lalu memasukkan kode ini.'));
+    :'Bagikan kode room kepada temanmu. Mereka membuka link yang sama, mengisi nama, lalu memasukkan kode ini. Kalau halaman tertutup, buka lagi dan gabung dengan kode yang sama; kursimu tetap tersimpan.'));
   if(mode==='p2p'&&net.code)p.append(h('div',{class:'row'},h('span',{class:'code'},net.code),h('button',{class:'btn sm',onclick:()=>copy(net.code)},'Salin kode')));
   const seats=h('div',{class:'seats'});
   S.players.forEach((pl,k)=>seats.append(h('div',{class:'seat'},
@@ -653,55 +653,80 @@ async function startDb(db,user){
   if(!state)render();
 }
 
-/* Mode B: standalone file, free peer-to-peer rooms (PeerJS) */
-const P2P={peer:null,conns:[],host:false,hostConn:null};
-function loadPeer(){if(window.Peer)return Promise.resolve();return new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.append(s);});}
+/* Mode B: standalone file. Free online rooms through a public relay
+   (MQTT over secure WebSocket). Every move is sent to the relay, which
+   keeps the latest table for the room code, so it works on any network
+   and survives a player switching apps or reloading. */
+const BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+const RELAY={client:null,topic:null};
+net.status='';
+function loadMqtt(){if(window.mqtt)return Promise.resolve();return new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js';s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.append(s);});}
 const randCode=()=>Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
-function p2pSend(conn,s){try{if(conn&&conn.open)conn.send({t:'state',s});}catch(e){}}
+const roomTopic=code=>'cambio-meja-v1/'+code;
+function setConn(s){if(net.status===s)return;net.status=s;render();}
+function openRelay(url,topic){
+  return new Promise((res,rej)=>{
+    const c=mqtt.connect(url,{clientId:'cmb_'+Math.random().toString(16).slice(2,12),clean:true,keepalive:30,reconnectPeriod:2000,connectTimeout:8000});
+    const t=setTimeout(()=>{c.end(true);rej(new Error('timeout'));},9000);
+    c.on('error',()=>{});
+    c.once('connect',()=>{c.subscribe(topic,{qos:1},err=>{clearTimeout(t);if(err){c.end(true);rej(err);}else res(c);});});
+  });
+}
+function attachRelay(c,topic){
+  RELAY.client=c;RELAY.topic=topic;
+  c.on('message',(tp,buf)=>{let s;try{s=JSON.parse(buf.toString());}catch(e){return;}onRelayState(s);});
+  c.on('connect',()=>setConn('ok'));
+  c.on('reconnect',()=>setConn('retry'));
+  c.on('offline',()=>setConn('retry'));
+  net.push=relayPush;setConn('ok');
+}
+function relayPush(S){if(RELAY.client)RELAY.client.publish(RELAY.topic,JSON.stringify(S),{qos:1,retain:true});}
+function newer(a,b){return (a.v-b.v)||((a.w||'')>(b.w||'')?1:(a.w||'')<(b.w||'')?-1:0);}
+function onRelayState(s){
+  if(!s||typeof s.v!=='number'||!Array.isArray(s.players))return;
+  if(!state){adopt(s);return;}
+  const d=newer(s,state);
+  if(d>0)adopt(s);
+  else if(d<0)relayPush(state); /* re-send the newer table so everyone converges */
+}
 async function hostRoom(){
   if(!ui.name.trim())return toast('Isi nama dulu.');
-  try{await loadPeer();}catch(e){return toast('Tidak bisa memuat modul online. Cek koneksi internet.');}
-  const code=randCode();const peer=new Peer('cambio-tbl-'+code,{debug:0});
-  P2P.peer=peer;P2P.host=true;
-  peer.on('open',()=>{net.code=code;mode='p2p';state=initState();act('join',ui.name);});
-  peer.on('connection',conn=>{
-    P2P.conns.push(conn);
-    conn.on('data',m=>{
-      if(!m)return;
-      if(m.t==='hello'){p2pSend(conn,state);return;}
-      if(m.t==='state'){
-        if(m.s.v>state.v){adopt(m.s);for(const c of P2P.conns)if(c!==conn)p2pSend(c,m.s);}
-        else p2pSend(conn,state);
-      }});
-    conn.on('close',()=>{P2P.conns=P2P.conns.filter(c=>c!==conn);});
-  });
-  peer.on('error',e=>{if(e.type==='unavailable-id'){peer.destroy();hostRoom();}else toast('Koneksi gagal ('+e.type+').');});
-  net.push=(S)=>{for(const c of P2P.conns)p2pSend(c,S);};
+  try{await loadMqtt();}catch(e){return toast('Tidak bisa memuat modul online. Cek koneksi internet.');}
+  toast('Membuat room…');
+  const code=randCode(),topic=roomTopic(code);
+  for(const url of BROKERS){
+    let c;try{c=await openRelay(url,topic);}catch(e){continue;}
+    attachRelay(c,topic);net.code=code;mode='p2p';state=initState();act('join',ui.name);
+    return;
+  }
+  toast('Tidak bisa terhubung ke server room. Cek internet lalu coba lagi.');
 }
 async function joinRoom(code){
   code=String(code||'').trim().toUpperCase();
   if(!ui.name.trim())return toast('Isi nama dulu.');
   if(code.length<5)return toast('Kode room terdiri dari 5 karakter.');
-  try{await loadPeer();}catch(e){return toast('Tidak bisa memuat modul online. Cek koneksi internet.');}
-  const peer=new Peer({debug:0});P2P.peer=peer;
+  try{await loadMqtt();}catch(e){return toast('Tidak bisa memuat modul online. Cek koneksi internet.');}
   toast('Menghubungkan…');
-  peer.on('open',()=>{
-    const conn=peer.connect('cambio-tbl-'+code,{reliable:true,serialization:'json'});P2P.hostConn=conn;
-    let first=true;
-    conn.on('open',()=>conn.send({t:'hello'}));
-    conn.on('data',m=>{if(!m||m.t!=='state')return;net.code=code;mode='p2p';adopt(m.s);
-      if(first){first=false;if(myIdx()<0)act('join',ui.name);}});
-    conn.on('close',()=>{toast('Koneksi ke host terputus.');});
-  });
-  peer.on('error',e=>{toast(e.type==='peer-unavailable'?'Room tidak ditemukan. Cek kodenya.':'Koneksi gagal ('+e.type+').');});
-  net.push=(S)=>p2pSend(P2P.hostConn,S);
+  const topic=roomTopic(code);
+  for(const url of BROKERS){
+    let c;try{c=await openRelay(url,topic);}catch(e){continue;}
+    const got=await new Promise(res=>{const t=setTimeout(()=>res(null),6000);
+      c.once('message',(tp,buf)=>{clearTimeout(t);try{res(JSON.parse(buf.toString()));}catch(e){res(null);}});});
+    if(got&&Array.isArray(got.players)){
+      attachRelay(c,topic);net.code=code;mode='p2p';adopt(got);
+      if(myIdx()<0)act('join',ui.name);else toast('Kamu kembali ke meja.');
+      return;
+    }
+    c.end(true);
+  }
+  toast('Room tidak ditemukan. Cek kodenya, atau minta temanmu membuat room baru.');
 }
 function p2pSetupView(){
   const code=h('input',{type:'text',id:'codeInput',maxlength:'5',placeholder:'Contoh: K7QMX',autocomplete:'off',value:ui.code||'',style:'text-transform:uppercase;letter-spacing:.15em'});
   code.addEventListener('input',()=>{ui.code=code.value;});
   return h('div',{class:'panel'},
     h('h2',{},'Main online dengan teman'),
-    h('p',{class:'muted small'},'Satu orang membuat room dan membagikan kodenya. Teman membuka file yang sama di perangkatnya, lalu bergabung dengan kode itu. Gratis, tanpa akun.'),
+    h('p',{class:'muted small'},'Satu orang membuat room dan membagikan kodenya. Teman membuka link yang sama, lalu bergabung dengan kode itu. Gratis, tanpa akun, dan jalan di data seluler maupun Wi-Fi.'),
     nameField(),
     h('div',{class:'row'},h('button',{class:'btn primary',onclick:hostRoom},'Buat room baru')),
     h('label',{class:'field',for:'codeInput'},'Punya kode room?',code),

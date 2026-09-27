@@ -77,6 +77,8 @@ details summary{cursor:pointer;font-weight:700}
 .card.hole{border:1.5px dashed #BCC5D2;background:rgba(255,255,255,.4)}
 .card.sel{cursor:pointer;box-shadow:0 0 0 3px var(--gold),0 8px 18px rgba(28,36,51,.2)}
 .card.sel:hover{transform:translateY(-3px)}
+.card.tap{cursor:pointer}
+.card.tap:active{transform:scale(.96)}
 .card.slapsel{cursor:pointer;box-shadow:0 0 0 3px var(--red),0 8px 18px rgba(28,36,51,.2)}
 .card.picked{transform:translateY(-8px);box-shadow:0 0 0 4px var(--gold),0 12px 22px rgba(28,36,51,.25)}
 .card.hot{box-shadow:0 0 0 3px var(--red),0 0 18px rgba(215,38,61,.35)}
@@ -138,6 +140,7 @@ details summary{cursor:pointer;font-weight:700}
   padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));backdrop-filter:blur(10px);box-shadow:0 -8px 24px rgba(28,36,51,.08)}
 .dock-in{max-width:728px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .say{font-size:14px;font-weight:700}
+.hint{font-size:12.5px;font-weight:600;color:var(--red)}
 .give{background:var(--red-soft);border:1px solid var(--red);color:#8E1426;border-radius:12px;padding:8px 10px;font-size:13px;font-weight:600}
 
 /* overlay + toast */
@@ -364,7 +367,7 @@ const A={
 
 /* ================= APP STATE ================= */
 let state=null,meId=null,mode='connecting',accessNote='';
-const ui={slap:false,peek:null,toastT:0,lastLog:0};
+const ui={usePower:false,peek:null,toastT:0,lastLog:0};
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
 ui.name=store('cambio-name')||'';
 function localId(){let id=store('cambio-id');if(!id){id='p'+Math.random().toString(36).slice(2,10)+Date.now().toString(36);store('cambio-id',id);}return id;}
@@ -401,7 +404,8 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function cardEl(c,faceUp,opts={}){
   const cls=['card'];
   if(!c)cls.push('hole');else if(faceUp){cls.push('face');if(isRed(c))cls.push('red');}else cls.push('back');
-  if(opts.sel)cls.push(opts.slapSel?'slapsel':'sel');
+  if(opts.sel)cls.push('sel');
+  if(opts.tap)cls.push('tap');
   if(opts.picked)cls.push('picked');
   const el=h('div',{class:cls.join(' '),role:opts.onclick?'button':null,tabindex:opts.onclick?'0':null,'aria-label':c&&faceUp?label(c):(c?'kartu tertutup':'posisi kosong')});
   if(c&&faceUp){
@@ -414,31 +418,31 @@ function cardEl(c,faceUp,opts={}){
 }
 
 /* what a tap on a card does right now */
+function canSlap(S){const top=S.discard[S.discard.length-1];return !!top&&S.slapLock!==top.id;}
+function inPowerMode(S,i){return ui.usePower&&S.phase==='play'&&S.turn===i&&S.ts.stage==='power';}
 function tapIntent(o,slot){
   const S=state,i=myIdx();
   if(!S||S.phase!=='play'||i<0)return null;
   const c=S.players[o].grid[slot];if(!c)return null;
-  if(ui.slap)return locked(S,i,o)?null:'slap';
-  if(S.gives.some(g=>g.from===i))return o===i?'give':null;
-  if(S.turn===i){
-    if(S.ts.stage==='drawn')return o===i?'swap':null;
-    if(S.ts.stage==='power'){
-      if(locked(S,i,o))return null;
-      const pw=S.ts.power;
-      if(pw==='peekOwn')return o===i?'pick':null;
-      if(pw==='peekOther')return o!==i?'pick':null;
-      const p=S.ts.picks[0];
-      if(!p)return 'pick';
-      if(p.o===o)return p.slot===slot?'pick':null;
-      if(pw==='kingLook'&&p.o!==i&&o!==i)return null;
-      return 'pick';
-    }
+  const slap=canSlap(S)&&!locked(S,i,o)?'slap':null;
+  if(S.gives.some(g=>g.from===i))return o===i?'give':slap;
+  if(S.turn===i&&S.ts.stage==='drawn')return o===i?'swap':slap;
+  if(inPowerMode(S,i)){
+    if(locked(S,i,o))return null;
+    const pw=S.ts.power;
+    if(pw==='peekOwn')return o===i?'pick':null;
+    if(pw==='peekOther')return o!==i?'pick':null;
+    const p=S.ts.picks[0];
+    if(!p)return 'pick';
+    if(p.o===o)return p.slot===slot?'pick':null;
+    if(pw==='kingLook'&&p.o!==i&&o!==i)return null;
+    return 'pick';
   }
-  return null;
+  return slap;
 }
 function onTap(o,slot){
   const it=tapIntent(o,slot);
-  if(it==='slap'){ui.slap=false;act('slap',o,slot);}
+  if(it==='slap')act('slap',o,slot);
   else if(it==='give')act('give',slot);
   else if(it==='swap')act('swap',slot);
   else if(it==='pick')act('pick',o,slot);
@@ -452,7 +456,7 @@ function gridEl(S,o,faceAll,peekSlots){
     const c=k<g.length?g[k]:null;
     const up=faceAll||(peekSlots&&peekSlots.includes(k));
     const it=c?tapIntent(o,k):null;
-    wrap.append(cardEl(c,up&&!!c,{sel:!!it,slapSel:it==='slap',picked:picks.some(p=>p.o===o&&p.slot===k),onclick:it?()=>onTap(o,k):null}));
+    wrap.append(cardEl(c,up&&!!c,{sel:!!it&&it!=='slap',tap:it==='slap',picked:picks.some(p=>p.o===o&&p.slot===k),onclick:it?()=>onTap(o,k):null}));
   }
   return wrap;
 }
@@ -529,7 +533,7 @@ function rulesPanel(){
       h('li',{},'Tiap pemain mendapat ',h('b',{},'4 kartu tertutup'),' (2×2). Intip 2 kartu bawahmu sekali, lalu hafalkan.'),
       h('li',{},'Di giliranmu, ambil dari ',h('b',{},'tumpukan'),' atau ',h('b',{},'buangan'),'. Tukar ke gridmu, atau buang.'),
       h('li',{},'Kartu dari tumpukan yang langsung dibuang memakai kekuatannya: ',h('b',{},'7/8'),' intip kartumu, ',h('b',{},'9/10'),' intip kartu lawan, ',h('b',{},'J/Q'),' tukar buta, ',h('b',{},'K hitam'),' intip dua lalu boleh tukar.'),
-      h('li',{},h('b',{},'Banting'),' kapan saja: jika angka kartu teratas buangan sama dengan kartu yang kamu ingat, tekan Banting lalu ketuk kartu itu. Salah banting = 1 kartu hukuman. Membanting kartu lawan berarti kamu memberinya 1 kartumu.'),
+      h('li',{},h('b',{},'Banting'),' kapan saja: jika angka kartu teratas buangan sama dengan kartu yang kamu ingat, langsung ketuk kartu itu (milikmu atau lawan). Salah banting = 1 kartu hukuman. Membanting kartu lawan berarti kamu memberinya 1 kartumu.'),
       h('li',{},'Yakin totalmu terendah? Serukan ',h('b',{},'Cambio'),' di awal giliran. Pemain lain mendapat satu giliran terakhir, lalu semua kartu dibuka.')),
     h('div',{class:'values'},...[['A','1'],['2–10','sesuai angka'],['J / Q','10'],['K hitam','10'],['K merah','−1'],['Joker','0']].map(([a,b])=>h('div',{},h('span',{},a),h('b',{},b)))),
     h('p',{class:'muted small'},'Skor ronde: total terendah menang dan mendapat 0 poin; yang lain menambahkan totalnya. Seri dengan pemanggil Cambio dimenangkan yang bukan pemanggil. Pemanggil yang kalah mendapat +10. Pemain yang mencapai 100 poin kalah.'));
@@ -591,6 +595,7 @@ function fitDock(px){document.getElementById('app').style.paddingBottom=(px+24)+
 function hideDock(){document.getElementById('dock').hidden=true;fitDock(0);}
 function renderDock(){
   const S=state,i=myIdx(),d=document.getElementById('dock');
+  if(!(S.phase==='play'&&S.turn===i&&S.ts.stage==='power'))ui.usePower=false;
   const inner=h('div',{class:'dock-in'});
   const isHost=S.hostId===meId;
   const btns=h('div',{class:'row'});
@@ -626,17 +631,23 @@ function renderDock(){
         say=`Kamu memegang ${label(c)} (nilai ${val(c)}). Ketuk kartumu untuk menukar, atau buang.`;
         btns.append(h('button',{class:'btn primary',onclick:()=>act('discard')},pw?`Buang & ${POWER_TXT[pw]}`:'Buang'));
       }else say=`Kamu memegang ${label(c)} dari buangan. Ketuk salah satu kartumu untuk menukar.`;
+    }else if(st==='power'&&!ui.usePower){
+      const pw=S.ts.power,top=S.discard[S.discard.length-1];
+      say=`Kamu membuang ${top?label(top):'kartu'}. Ingat kartu yang sama? Ketuk untuk membanting. Atau pakai kekuatannya.`;
+      btns.append(h('button',{class:'btn primary',onclick:()=>{ui.usePower=true;render();}},POWER_TXT[pw][0].toUpperCase()+POWER_TXT[pw].slice(1)),
+        h('button',{class:'btn',onclick:()=>act('skipPower')},'Selesai'));
     }else if(st==='power'){
       const pw=S.ts.power,n=S.ts.picks.length;
       say={peekOwn:'Ketuk salah satu kartumu untuk diintip.',peekOther:'Ketuk salah satu kartu lawan untuk diintip.',
         blindSwap:n?'Sekarang ketuk kartu milik pemain lain untuk ditukar.':'Tukar buta: ketuk kartu pertama (milik siapa saja).',
         kingLook:n?'Ketuk kartu kedua (dari pemilik lain; salah satu harus milikmu).':'K hitam: ketuk kartu pertama untuk dilihat.'}[pw];
       btns.append(h('button',{class:'btn sm',onclick:()=>act('skipPower')},'Lewati kekuatan'));
+      if(!n)btns.append(h('button',{class:'btn sm',onclick:()=>{ui.usePower=false;render();}},'Kembali'));
     }else if(st==='kingDecide')say='Lihat kedua kartu, lalu putuskan.';
-    if(i>=0&&!mine||(mine&&st!=='power'&&st!=='kingDecide')){
-      if(i>=0)btns.append(h('button',{class:'btn slap'+(ui.slap?' on':''),'aria-pressed':ui.slap?'true':'false',onclick:()=>{ui.slap=!ui.slap;render();}},ui.slap?'Batal banting':'Banting!'));
+    if(i>=0&&canSlap(S)&&!gv&&!(mine&&st==='power'&&ui.usePower)){
+      const top=S.discard[S.discard.length-1];
+      inner.append(h('div',{class:'hint'},`Buangan ${label(top)} bisa dibanting: ketuk langsung kartu yang angkanya sama.`));
     }
-    if(ui.slap)say='Ketuk kartu (milikmu atau lawan) yang angkanya sama dengan buangan teratas.';
     if(isHost&&!mine)btns.append(h('button',{class:'btn sm',title:'Pakai jika pemain terputus',onclick:()=>act('forceSkip')},'Lewati giliran'));
   }
   if(say)inner.prepend(h('div',{class:'say'},say));

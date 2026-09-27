@@ -1,0 +1,726 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style></head><body><title>Meja Cambio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=Playfair+Display:wght@800&display=swap">
+<style>
+:root{
+  --felt:#13263E; --felt-hi:#1D3858; --rail:#0B1729; --panel:rgba(9,19,34,.72);
+  --ivory:#FBF6EA; --ink:#1B1B22; --red:#C4283C;
+  --brass:#E2AA3E; --brass-ink:#2A1C04; --mist:#A7B6CC; --text:#EEF2F8;
+  --line:rgba(226,170,62,.24); --good:#62C792; --bad:#F07A7A;
+  --display:'Bricolage Grotesque',ui-rounded,system-ui,sans-serif;
+  --body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --rank:'Playfair Display',Georgia,'Times New Roman',serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--rail);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+#app{min-height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;
+  background:radial-gradient(130% 75% at 50% 42%,var(--felt-hi),var(--felt) 58%,var(--rail));
+  padding-inline:16px;padding-block:12px 190px;max-width:760px;margin:0 auto}
+button,input{font:inherit}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{font-size:28px;font-weight:800;color:var(--ivory)}
+.brand h1 span{color:var(--brass)}
+.badge{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+
+/* buttons */
+.btn{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--text);border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer;min-height:44px}
+.btn:hover{background:rgba(255,255,255,.1)}
+.btn:focus-visible,.card:focus-visible,input:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.btn.primary{background:var(--brass);color:var(--brass-ink);border-color:var(--brass)}
+.btn.primary:hover{background:#EDBA55}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn.slap{border-color:var(--red);color:#FFB3BD}
+.btn.slap.on{background:var(--red);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{min-height:34px;padding:6px 10px;font-size:13px;border-radius:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* panels */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel h2{font-size:20px}
+.muted{color:var(--mist)}
+.small{font-size:13px}
+label.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mist)}
+input[type=text]{background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;min-height:44px;box-sizing:border-box;width:100%}
+.seats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.seat{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.03)}
+.seat.emptyseat{border-style:dashed;color:var(--mist)}
+.seat b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toggle{display:flex;align-items:flex-start;gap:10px;font-size:14px;cursor:pointer}
+.toggle input{margin-top:3px;accent-color:var(--brass);width:18px;height:18px}
+.rules{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px;color:#D8E0EC}
+.rules b{color:var(--ivory)}
+.values{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;font-size:13px;font-variant-numeric:tabular-nums}
+.values div{border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:flex;justify-content:space-between}
+.code{font-family:var(--display);font-size:34px;letter-spacing:.18em;color:var(--brass);font-weight:800}
+details summary{cursor:pointer;font-weight:600;color:var(--ivory)}
+
+/* cards */
+.card{--w:84px;width:var(--w);height:calc(var(--w)*1.4);border-radius:calc(var(--w)*.11);position:relative;flex:none;user-select:none;box-sizing:border-box;transition:transform .15s ease,box-shadow .15s ease}
+.card.face{background:var(--ivory);color:var(--ink);box-shadow:0 2px 0 rgba(0,0,0,.25),0 8px 16px rgba(0,0,0,.28)}
+.card.face.red{color:var(--red)}
+.card .ix{position:absolute;top:7%;left:9%;font-family:var(--rank);font-weight:800;line-height:.95;font-size:calc(var(--w)*.27);text-align:center}
+.card .ix i{display:block;font-style:normal;font-size:.78em}
+.card .pip{position:absolute;inset:0;display:grid;place-items:center;font-size:calc(var(--w)*.5);padding-top:12%}
+.card .pip.jk{font-family:var(--display);font-size:calc(var(--w)*.2);letter-spacing:.06em;font-weight:800}
+.card.back{background-color:#0F2036;border:2px solid var(--ivory);
+  background-image:repeating-linear-gradient(45deg,rgba(226,170,62,.38) 0 1px,transparent 1px 7px),repeating-linear-gradient(-45deg,rgba(226,170,62,.38) 0 1px,transparent 1px 7px);
+  box-shadow:inset 0 0 0 3px #0F2036,inset 0 0 0 4px rgba(226,170,62,.5),0 6px 14px rgba(0,0,0,.3)}
+.card.hole{border:1.5px dashed rgba(255,255,255,.22);background:rgba(0,0,0,.12)}
+.card.sel{cursor:pointer;box-shadow:0 0 0 2px var(--brass),0 8px 18px rgba(0,0,0,.35)}
+.card.sel:hover{transform:translateY(-3px)}
+.card.slapsel{cursor:pointer;box-shadow:0 0 0 2px var(--red),0 8px 18px rgba(0,0,0,.35)}
+.card.picked{transform:translateY(-8px);box-shadow:0 0 0 3px var(--brass),0 12px 22px rgba(0,0,0,.4)}
+.card .tag{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:var(--brass);color:var(--brass-ink);font-size:10px;font-weight:700;border-radius:999px;padding:1px 7px;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+
+/* table */
+.opps{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.opp{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;align-items:center;min-width:120px}
+.opp.turn,.mine.turn{border-color:var(--brass);box-shadow:0 0 0 1px var(--brass) inset}
+.who{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;max-width:160px}
+.who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--brass);flex:none}
+.pts{font-variant-numeric:tabular-nums;color:var(--mist);font-weight:500}
+.chip{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;border-radius:999px;padding:2px 7px}
+.chip.cambio{background:var(--red);color:#fff}
+.chip.host{border:1px solid var(--line);color:var(--mist)}
+.grid{display:grid;grid-template-columns:repeat(2,auto);gap:6px;justify-content:center}
+.opp .card{--w:40px}
+.mine .grid{gap:12px}
+.mine .card{--w:min(24vw,96px)}
+.center{display:flex;justify-content:center;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.pile{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--mist);text-align:center}
+.pile .card{--w:66px}
+.pile.drawn .card{--w:76px}
+.pile .lbl{text-transform:uppercase;letter-spacing:.08em;font-size:10.5px}
+.log{font-size:13px;color:var(--mist);display:flex;flex-direction:column;gap:2px;text-align:center;min-height:3.6em}
+.log div:last-child{color:var(--ivory)}
+.mine{border:1px solid transparent;border-radius:18px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.total{font-family:var(--display);font-size:15px;color:var(--brass);font-variant-numeric:tabular-nums}
+
+/* dock */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(8,17,31,.95);border-top:1px solid var(--line);
+  padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));backdrop-filter:blur(8px)}
+.dock-in{max-width:728px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.say{font-size:14px;font-weight:600}
+.say .muted{font-weight:400}
+.give{background:rgba(196,40,60,.18);border:1px solid var(--red);border-radius:10px;padding:8px 10px;font-size:13px}
+
+/* overlay + toast */
+.ov{position:fixed;inset:0;z-index:30;background:rgba(4,9,18,.78);display:grid;place-items:center;padding:16px}
+.ov .panel{max-width:420px;width:100%;box-sizing:border-box;align-items:center;text-align:center;background:#0E1D33}
+.ov .cards{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.ov .card{--w:92px}
+.ov .cap{font-size:12px;color:var(--mist);margin-top:12px;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--dockh,0px) + 16px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--ivory);color:var(--ink);font-weight:600;border-radius:12px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:calc(100% - 48px);font-size:14px;text-align:center}
+table.score{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+table.score td,table.score th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+table.score th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);font-weight:600}
+table.score td.n{text-align:right}
+.win{color:var(--good);font-weight:700}
+</style>
+
+<div id="app"><div class="panel"><h2>Menyiapkan meja…</h2><p class="muted small">Menghubungkan ke meja bersama.</p></div></div>
+<div id="dock" class="dock" hidden></div>
+<div id="ov" class="ov" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* ================= ENGINE ================= */
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SUITS=['♠','♥','♦','♣'];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function newDeck(jokers){let id=0;const d=[];for(const s of SUITS)for(const r of RANKS)d.push({r,s,id:id++});if(jokers){d.push({r:'JK',s:'',id:id++});d.push({r:'JK',s:'',id:id++});}return shuffle(d);}
+const isRed=c=>c.s==='♥'||c.s==='♦';
+function val(c){if(c.r==='JK')return 0;if(c.r==='A')return 1;if(c.r==='K')return isRed(c)?-1:10;if(c.r==='J'||c.r==='Q')return 10;return +c.r;}
+function power(c){if(c.r==='7'||c.r==='8')return'peekOwn';if(c.r==='9'||c.r==='10')return'peekOther';if(c.r==='J'||c.r==='Q')return'blindSwap';if(c.r==='K'&&!isRed(c))return'kingLook';return null;}
+const POWER_TXT={peekOwn:'intip 1 kartumu',peekOther:'intip 1 kartu lawan',blindSwap:'tukar buta 2 kartu',kingLook:'intip 2 kartu lalu boleh tukar'};
+const label=c=>c.r==='JK'?'Joker':c.r+c.s;
+const gridSum=g=>g.reduce((a,c)=>a+(c?val(c):0),0);
+
+function initState(){return{v:0,phase:'lobby',settings:{jokers:true,slapPenalty:false},players:[],hostId:null,deck:[],discard:[],turn:0,ts:{stage:'start'},cambio:null,slapLock:null,gives:[],log:[],lk:0,round:0,startIdx:0,result:null};}
+function addLog(S,t){S.lk=(S.lk||0)+1;S.log.push({k:S.lk,t});if(S.log.length>40)S.log.splice(0,S.log.length-40);}
+const nm=(S,i)=>(S.players[i]&&S.players[i].name)||'?';
+const E=m=>({err:m});
+const pidx=(S,me)=>S.players.findIndex(p=>p.id===me);
+const pos=(k)=>['kiri atas','kanan atas','kiri bawah','kanan bawah'][k]||('tambahan '+(k-3));
+
+function ensureDeck(S){if(S.deck.length)return true;if(S.discard.length<2)return false;const top=S.discard.pop();S.deck=shuffle(S.discard);S.discard=[top];S.slapLock=top.id;addLog(S,'Buangan dikocok ulang menjadi tumpukan baru.');return true;}
+function putCard(grid,card,prefer){if(prefer!=null&&prefer<grid.length&&!grid[prefer]){grid[prefer]=card;return;}const e=grid.indexOf(null);if(e>=0)grid[e]=card;else grid.push(card);}
+function addPenalty(S,i){if(!ensureDeck(S))return false;putCard(S.players[i].grid,S.deck.pop());return true;}
+function deal(S){
+  S.deck=newDeck(S.settings.jokers);
+  for(const p of S.players){p.grid=[S.deck.pop(),S.deck.pop(),S.deck.pop(),S.deck.pop()];p.ready=false;}
+  S.discard=[S.deck.pop()];S.slapLock=S.discard[0].id;
+  S.turn=S.startIdx%S.players.length;S.ts={stage:'start'};S.cambio=null;S.gives=[];S.result=null;S.round++;S.phase='peek';
+  addLog(S,`Ronde ${S.round}: kartu dibagikan. Hafalkan dua kartu bawahmu.`);
+}
+function endTurn(S){
+  const prev=S.turn;S.ts={stage:'start'};
+  if(S.cambio){S.cambio.remaining=S.cambio.remaining.filter(x=>x!==prev);if(!S.cambio.remaining.length){finishRound(S);return{};}}
+  S.turn=(prev+1)%S.players.length;
+  return{};
+}
+function finishRound(S){
+  for(const g of S.gives){const src=S.players[g.from].grid;const k=src.findIndex(c=>c);if(k>=0){const c=src[k];src[k]=null;putCard(S.players[g.to].grid,c,g.slot);}}
+  S.gives=[];
+  const totals=S.players.map(p=>gridSum(p.grid));
+  const min=Math.min(...totals);
+  let winners=totals.map((t,k)=>t===min?k:-1).filter(k=>k>=0);
+  const cb=S.cambio?S.cambio.by:null;
+  if(cb!=null&&winners.includes(cb)&&winners.length>1)winners=winners.filter(k=>k!==cb);
+  const callerFail=cb!=null&&!winners.includes(cb);
+  S.players.forEach((p,k)=>{if(!winners.includes(k))p.score+=totals[k];if(callerFail&&k===cb)p.score+=10;});
+  S.result={totals,winners,caller:cb,callerFail};
+  S.phase='roundEnd';S.startIdx++;S.ts={stage:'start'};
+  addLog(S,`Ronde selesai. Menang: ${winners.map(k=>nm(S,k)).join(', ')}.`);
+}
+function turnGuard(S,me){const i=pidx(S,me);if(S.phase!=='play')return{e:E('Ronde belum berjalan.')};if(i<0)return{e:E('Kamu belum duduk di meja.')};if(i!==S.turn)return{e:E('Bukan giliranmu.')};return{i};}
+function locked(S,i,o){return S.cambio&&o===S.cambio.by&&o!==i;}
+
+const A={
+  join(S,me,name){
+    name=String(name||'').trim().slice(0,16)||'Pemain';
+    const i=pidx(S,me);
+    if(i>=0){S.players[i].name=name;return{};}
+    if(!['lobby','roundEnd'].includes(S.phase))return E('Ronde sedang berjalan. Kamu bisa ikut setelah ronde ini selesai.');
+    if(S.players.length>=4)return E('Meja penuh (maksimal 4 pemain).');
+    S.players.push({id:me,name,grid:[],ready:false,score:0});
+    if(!S.players.some(p=>p.id===S.hostId))S.hostId=me;
+    addLog(S,`${name} duduk di meja.`);return{};
+  },
+  leave(S,me){
+    if(S.phase!=='lobby')return E('Kamu hanya bisa berdiri dari meja di lobi.');
+    const i=pidx(S,me);if(i<0)return{};
+    const n=nm(S,i);S.players.splice(i,1);
+    if(S.hostId===me)S.hostId=S.players[0]?S.players[0].id:null;
+    addLog(S,`${n} meninggalkan meja.`);return{};
+  },
+  kick(S,me,k){
+    if(S.hostId!==me||S.phase!=='lobby')return E('Hanya host yang bisa mengeluarkan pemain di lobi.');
+    const n=nm(S,k);S.players.splice(k,1);addLog(S,`${n} dikeluarkan dari meja.`);return{};
+  },
+  setting(S,me,key,v){if(S.hostId!==me)return E('Hanya host yang bisa mengubah aturan.');if(S.phase!=='lobby')return E('Aturan hanya bisa diubah di lobi.');S.settings[key]=!!v;return{};},
+  start(S,me){
+    if(S.hostId!==me)return E('Hanya host yang bisa memulai.');
+    if(!['lobby','roundEnd'].includes(S.phase))return E('Ronde sedang berjalan.');
+    if(S.players.length<2)return E('Butuh minimal 2 pemain.');
+    deal(S);return{};
+  },
+  toLobby(S,me){if(S.hostId!==me)return E('Hanya host.');S.phase='lobby';S.result=null;for(const p of S.players)p.grid=[];return{};},
+  resetScores(S,me){if(S.hostId!==me)return E('Hanya host.');for(const p of S.players)p.score=0;S.round=0;addLog(S,'Skor diulang dari nol.');return{};},
+  ready(S,me){
+    if(S.phase!=='peek')return{};
+    const i=pidx(S,me);if(i<0)return{};
+    S.players[i].ready=true;
+    if(S.players.every(p=>p.ready)){S.phase='play';addLog(S,`Semua siap. Giliran pertama: ${nm(S,S.turn)}.`);}
+    return{};
+  },
+  drawDeck(S,me){
+    const g=turnGuard(S,me);if(g.e)return g.e;
+    if(S.ts.stage!=='start')return E('Kamu sudah mengambil kartu.');
+    if(!ensureDeck(S))return E('Tumpukan habis.');
+    S.ts={stage:'drawn',card:S.deck.pop(),from:'deck'};
+    addLog(S,`${nm(S,g.i)} mengambil dari tumpukan.`);return{};
+  },
+  takeDiscard(S,me){
+    const g=turnGuard(S,me);if(g.e)return g.e;
+    if(S.ts.stage!=='start')return E('Kamu sudah mengambil kartu.');
+    if(!S.discard.length)return E('Buangan kosong.');
+    const c=S.discard.pop();S.slapLock=S.discard.length?S.discard[S.discard.length-1].id:null;
+    S.ts={stage:'drawn',card:c,from:'discard'};
+    addLog(S,`${nm(S,g.i)} mengambil ${label(c)} dari buangan.`);return{};
+  },
+  swap(S,me,slot){
+    const g=turnGuard(S,me);if(g.e)return g.e;
+    if(S.ts.stage!=='drawn')return E('Ambil kartu dulu.');
+    const grid=S.players[g.i].grid;const old=grid[slot];
+    if(!old)return E('Posisi itu kosong. Pilih kartu lain.');
+    grid[slot]=S.ts.card;S.discard.push(old);S.slapLock=null;
+    addLog(S,`${nm(S,g.i)} menukar kartu ${pos(slot)} dan membuang ${label(old)}.`);
+    return endTurn(S);
+  },
+  discard(S,me){
+    const g=turnGuard(S,me);if(g.e)return g.e;
+    if(S.ts.stage!=='drawn')return E('Ambil kartu dulu.');
+    if(S.ts.from!=='deck')return E('Kartu dari buangan harus ditukar ke gridmu.');
+    const c=S.ts.card;S.discard.push(c);S.slapLock=null;
+    const p=power(c);
+    addLog(S,`${nm(S,g.i)} membuang ${label(c)}${p?' dan memakai kekuatannya':''}.`);
+    if(p){S.ts={stage:'power',power:p,picks:[]};return{};}
+    return endTurn(S);
+  },
+  skipPower(S,me){const g=turnGuard(S,me);if(g.e)return g.e;if(S.ts.stage!=='power'&&S.ts.stage!=='kingDecide')return{};return endTurn(S);},
+  pick(S,me,o,slot){
+    const g=turnGuard(S,me);if(g.e)return g.e;const i=g.i;
+    if(S.ts.stage!=='power')return{};
+    const c=S.players[o]&&S.players[o].grid[slot];
+    if(!c)return E('Posisi itu kosong.');
+    if(locked(S,i,o))return E('Kartu pemanggil Cambio terkunci.');
+    const pw=S.ts.power;
+    if(pw==='peekOwn'){if(o!==i)return E('Pilih salah satu kartumu sendiri.');addLog(S,`${nm(S,i)} mengintip kartunya (${pos(slot)}).`);return Object.assign(endTurn(S),{peek:[{o,slot,card:{...c}}]});}
+    if(pw==='peekOther'){if(o===i)return E('Pilih kartu milik lawan.');addLog(S,`${nm(S,i)} mengintip kartu ${nm(S,o)} (${pos(slot)}).`);return Object.assign(endTurn(S),{peek:[{o,slot,card:{...c}}]});}
+    const picks=S.ts.picks;
+    if(picks.length===1&&picks[0].o===o&&picks[0].slot===slot){S.ts.picks=[];return{};}
+    if(picks.length===0){picks.push({o,slot});return{};}
+    const a=picks[0];
+    if(a.o===o)return E('Kartu kedua harus milik pemain lain.');
+    if(pw==='kingLook'&&a.o!==i&&o!==i)return E('Salah satu kartu harus milikmu.');
+    picks.push({o,slot});
+    if(pw==='blindSwap'){
+      const ga=S.players[a.o].grid,gb=S.players[o].grid;[ga[a.slot],gb[slot]]=[gb[slot],ga[a.slot]];
+      addLog(S,`${nm(S,i)} menukar buta kartu ${nm(S,a.o)} (${pos(a.slot)}) dengan kartu ${nm(S,o)} (${pos(slot)}).`);
+      return endTurn(S);
+    }
+    S.ts.stage='kingDecide';return{};
+  },
+  kingDecide(S,me,doSwap){
+    const g=turnGuard(S,me);if(g.e)return g.e;
+    if(S.ts.stage!=='kingDecide')return{};
+    const [a,b]=S.ts.picks;
+    if(doSwap){const ga=S.players[a.o].grid,gb=S.players[b.o].grid;[ga[a.slot],gb[b.slot]]=[gb[b.slot],ga[a.slot]];
+      addLog(S,`${nm(S,g.i)} melihat lalu menukar kartu ${nm(S,a.o)} (${pos(a.slot)}) dengan kartu ${nm(S,b.o)} (${pos(b.slot)}).`);}
+    else addLog(S,`${nm(S,g.i)} melihat dua kartu dan tidak menukar.`);
+    return endTurn(S);
+  },
+  cambio(S,me){
+    const g=turnGuard(S,me);if(g.e)return g.e;
+    if(S.ts.stage!=='start')return E('Cambio hanya bisa dipanggil di awal giliran, sebelum mengambil kartu.');
+    if(S.cambio)return E('Cambio sudah dipanggil.');
+    S.cambio={by:g.i,remaining:S.players.map((_,k)=>k).filter(k=>k!==g.i)};
+    addLog(S,`${nm(S,g.i)} berseru CAMBIO! Pemain lain mendapat satu giliran terakhir.`);
+    return endTurn(S);
+  },
+  slap(S,me,o,slot){
+    const i=pidx(S,me);
+    if(S.phase!=='play'||i<0)return E('Banting hanya bisa saat ronde berjalan.');
+    const top=S.discard[S.discard.length-1];
+    if(!top)return E('Buangan kosong.');
+    if(S.slapLock===top.id)return E('Kartu teratas buangan sudah tidak bisa dibanting. Tunggu buangan berikutnya.');
+    const grid=S.players[o]&&S.players[o].grid;const c=grid&&grid[slot];
+    if(!c)return E('Posisi itu kosong.');
+    if(locked(S,i,o))return E('Kartu pemanggil Cambio terkunci.');
+    if(c.r===top.r){
+      grid[slot]=null;S.discard.push(c);S.slapLock=c.id;
+      if(o===i){addLog(S,`${nm(S,i)} membanting ${label(c)} miliknya. Kartunya berkurang satu.`);return{};}
+      S.gives.push({from:i,to:o,slot});
+      let extra='';
+      if(S.settings.slapPenalty&&addPenalty(S,o))extra=` ${nm(S,o)} juga mendapat 1 kartu hukuman.`;
+      addLog(S,`${nm(S,i)} membanting ${label(c)} milik ${nm(S,o)}!${extra} ${nm(S,i)} harus memberi 1 kartunya.`);
+      return{};
+    }
+    addPenalty(S,i);
+    addLog(S,`${nm(S,i)} salah banting: kartu itu ${label(c)}, bukan ${top.r==='JK'?'Joker':top.r}. Hukuman 1 kartu.`);
+    return{wrong:true};
+  },
+  give(S,me,slot){
+    const i=pidx(S,me);const gi=S.gives.findIndex(x=>x.from===i);
+    if(gi<0)return{};
+    const g=S.gives[gi];const mine=S.players[i].grid;const c=mine[slot];
+    if(!c)return E('Posisi itu kosong.');
+    mine[slot]=null;putCard(S.players[g.to].grid,c,g.slot);S.gives.splice(gi,1);
+    addLog(S,`${nm(S,i)} memberikan 1 kartu kepada ${nm(S,g.to)}.`);return{};
+  },
+  forceSkip(S,me){
+    if(S.hostId!==me||S.phase!=='play')return E('Hanya host.');
+    if(S.ts.stage==='drawn'){S.discard.push(S.ts.card);S.slapLock=null;}
+    addLog(S,`Host melewati giliran ${nm(S,S.turn)}.`);return endTurn(S);
+  }
+};
+
+/* ================= APP STATE ================= */
+let state=null,meId=null,mode='connecting',accessNote='';
+const ui={slap:false,peek:null,toastT:0,lastLog:0};
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
+ui.name=store('cambio-name')||'';
+function localId(){let id=store('cambio-id');if(!id){id='p'+Math.random().toString(36).slice(2,10)+Date.now().toString(36);store('cambio-id',id);}return id;}
+const clone=o=>JSON.parse(JSON.stringify(o));
+const myIdx=()=>state?pidx(state,meId):-1;
+
+function act(name,...args){
+  if(!state)return;
+  const S=clone(state);
+  const res=A[name](S,meId,...args)||{};
+  if(res.err){toast(res.err);return res;}
+  S.v=(state.v||0)+1;
+  state=S;
+  if(res.peek)ui.peek={title:'Kamu mengintip',cards:res.peek};
+  if(res.wrong)toast('Salah banting! Kamu dapat 1 kartu hukuman.');
+  render();net.push(S);
+  return res;
+}
+function adopt(s){state=s;render();}
+
+/* ================= UI HELPERS ================= */
+function h(tag,props,...kids){
+  const el=document.createElement(tag);
+  for(const [k,v] of Object.entries(props||{})){
+    if(v==null||v===false)continue;
+    if(k==='class')el.className=v;else if(k==='text')el.textContent=v;
+    else if(k.startsWith('on'))el.addEventListener(k.slice(2),v);
+    else el.setAttribute(k,v===true?'':v);
+  }
+  for(const kid of kids.flat()){if(kid==null||kid===false)continue;el.append(kid.nodeType?kid:document.createTextNode(String(kid)));}
+  return el;
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(ui.toastT);ui.toastT=setTimeout(()=>{t.hidden=true;},2600);}
+function cardEl(c,faceUp,opts={}){
+  const cls=['card'];
+  if(!c)cls.push('hole');else if(faceUp){cls.push('face');if(isRed(c))cls.push('red');}else cls.push('back');
+  if(opts.sel)cls.push(opts.slapSel?'slapsel':'sel');
+  if(opts.picked)cls.push('picked');
+  const el=h('div',{class:cls.join(' '),role:opts.onclick?'button':null,tabindex:opts.onclick?'0':null,'aria-label':c&&faceUp?label(c):(c?'kartu tertutup':'posisi kosong')});
+  if(c&&faceUp){
+    if(c.r==='JK'){el.append(h('div',{class:'ix'},'★'),h('div',{class:'pip jk'},'JOKER'));}
+    else{el.append(h('div',{class:'ix'},c.r,h('i',{},c.s)),h('div',{class:'pip'},c.s));}
+  }
+  if(opts.tag)el.append(h('span',{class:'tag'},opts.tag));
+  if(opts.onclick){el.addEventListener('click',opts.onclick);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();opts.onclick();}});}
+  return el;
+}
+
+/* what a tap on a card does right now */
+function tapIntent(o,slot){
+  const S=state,i=myIdx();
+  if(!S||S.phase!=='play'||i<0)return null;
+  const c=S.players[o].grid[slot];if(!c)return null;
+  if(ui.slap)return locked(S,i,o)?null:'slap';
+  if(S.gives.some(g=>g.from===i))return o===i?'give':null;
+  if(S.turn===i){
+    if(S.ts.stage==='drawn')return o===i?'swap':null;
+    if(S.ts.stage==='power'){
+      if(locked(S,i,o))return null;
+      const pw=S.ts.power;
+      if(pw==='peekOwn')return o===i?'pick':null;
+      if(pw==='peekOther')return o!==i?'pick':null;
+      const p=S.ts.picks[0];
+      if(!p)return 'pick';
+      if(p.o===o)return p.slot===slot?'pick':null;
+      if(pw==='kingLook'&&p.o!==i&&o!==i)return null;
+      return 'pick';
+    }
+  }
+  return null;
+}
+function onTap(o,slot){
+  const it=tapIntent(o,slot);
+  if(it==='slap'){ui.slap=false;act('slap',o,slot);}
+  else if(it==='give')act('give',slot);
+  else if(it==='swap')act('swap',slot);
+  else if(it==='pick')act('pick',o,slot);
+}
+
+function gridEl(S,o,faceAll,peekSlots){
+  const g=S.players[o].grid;const cells=Math.max(4,g.length+(g.length%2));
+  const wrap=h('div',{class:'grid'});
+  const picks=(S.phase==='play'&&S.ts.stage==='power'&&S.turn===myIdx())?S.ts.picks||[]:[];
+  for(let k=0;k<cells;k++){
+    const c=k<g.length?g[k]:null;
+    const up=faceAll||(peekSlots&&peekSlots.includes(k));
+    const it=c?tapIntent(o,k):null;
+    wrap.append(cardEl(c,up&&!!c,{sel:!!it,slapSel:it==='slap',picked:picks.some(p=>p.o===o&&p.slot===k),onclick:it?()=>onTap(o,k):null}));
+  }
+  return wrap;
+}
+
+/* ================= RENDER ================= */
+function render(){
+  const ae=document.activeElement;
+  const keep=ae&&ae.id&&ae.tagName==='INPUT'&&ae.type==='text'?{id:ae.id,a:ae.selectionStart,b:ae.selectionEnd}:null;
+  renderInner();
+  if(keep){const el=document.getElementById(keep.id);if(el){el.focus();try{el.setSelectionRange(keep.a,keep.b);}catch(e){}}}
+}
+function renderInner(){
+  const app=document.getElementById('app');
+  app.replaceChildren(header());
+  if(mode==='noaccess'){app.append(noAccessView());hideDock();renderOverlay();return;}
+  if(mode==='p2p-setup'){app.append(p2pSetupView(),rulesPanel());hideDock();renderOverlay();return;}
+  if(!state){app.append(h('div',{class:'panel'},h('h2',{},'Menyiapkan meja…')));hideDock();return;}
+  const i=myIdx();
+  if(state.phase==='lobby'||(i<0&&state.phase==='roundEnd')){app.append(lobbyView(),rulesPanel());hideDock();}
+  else{app.append(...tableView());renderDock();}
+  renderOverlay();
+}
+function header(){
+  const badge=mode==='db'?'Meja bersama':mode==='p2p'?('Room '+(net.code||'')):mode==='p2p-setup'?'File mandiri':'';
+  return h('div',{class:'top'},
+    h('div',{class:'brand'},h('h1',{},'Cambio',h('span',{},'.')),state&&state.round?h('span',{class:'badge'},'Ronde '+state.round):null),
+    badge?h('span',{class:'badge'},badge):null);
+}
+function nameField(){
+  const inp=h('input',{type:'text',id:'nameInput',maxlength:'16',placeholder:'Nama panggilanmu',value:ui.name,autocomplete:'off'});
+  inp.addEventListener('input',()=>{ui.name=inp.value;store('cambio-name',inp.value);});
+  return h('label',{class:'field',for:'nameInput'},'Nama',inp);
+}
+function lobbyView(){
+  const S=state,i=myIdx(),isHost=S.hostId===meId;
+  const p=h('div',{class:'panel'});
+  p.append(h('h2',{},S.phase==='roundEnd'?'Ikut ronde berikutnya':'Lobi meja'));
+  p.append(h('p',{class:'muted small'},mode==='db'
+    ?'Semua orang yang membuka halaman ini melihat meja yang sama. Duduk, tunggu teman, lalu host memulai ronde. 2–4 pemain.'
+    :'Bagikan kode room kepada temanmu. Mereka membuka file yang sama, memilih Gabung, lalu memasukkan kode ini.'));
+  if(mode==='p2p'&&net.code)p.append(h('div',{class:'row'},h('span',{class:'code'},net.code),h('button',{class:'btn sm',onclick:()=>copy(net.code)},'Salin kode')));
+  const seats=h('div',{class:'seats'});
+  S.players.forEach((pl,k)=>seats.append(h('div',{class:'seat'},
+    h('b',{},pl.name+(pl.id===meId?' (kamu)':'')),
+    h('span',{class:'row'},pl.id===S.hostId?h('span',{class:'chip host'},'host'):null,
+      isHost&&pl.id!==meId&&S.phase==='lobby'?h('button',{class:'btn sm',onclick:()=>act('kick',k)},'Keluarkan'):null))));
+  for(let k=S.players.length;k<4;k++)seats.append(h('div',{class:'seat emptyseat'},'Kursi kosong'));
+  p.append(seats);
+  if(i<0){
+    p.append(nameField(),h('div',{class:'row'},h('button',{class:'btn primary',onclick:()=>act('join',ui.name)},'Duduk di meja')));
+  }else{
+    const row=h('div',{class:'row'});
+    if(isHost)row.append(h('button',{class:'btn primary',disabled:S.players.length<2?true:null,onclick:()=>act('start')},S.players.length<2?'Menunggu pemain lain…':'Mulai ronde'));
+    else row.append(h('span',{class:'muted small'},'Menunggu host memulai ronde.'));
+    if(S.phase==='lobby')row.append(h('button',{class:'btn sm',onclick:()=>act('leave')},'Berdiri'));
+    p.append(row);
+  }
+  const set=h('div',{class:'panel',style:'background:transparent;padding:12px'},h('h3',{style:'font-size:15px'},'Aturan meja'+(isHost?'':' (diatur host)')));
+  const tog=(key,title,desc)=>{const cb=h('input',{type:'checkbox',id:'set-'+key,checked:S.settings[key]?true:null,disabled:(!isHost||S.phase!=='lobby')?true:null});
+    cb.addEventListener('change',()=>act('setting',key,cb.checked));
+    return h('label',{class:'toggle',for:'set-'+key},cb,h('span',{},h('b',{},title),h('br'),h('span',{class:'muted small'},desc)));};
+  set.append(tog('jokers','Pakai 2 Joker','Joker bernilai 0.'),tog('slapPenalty','Hukuman tambahan saat kartu lawan dibanting','Lawan yang kartunya kamu banting juga mengambil 1 kartu dari tumpukan.'));
+  p.append(set);
+  if(S.players.some(pl=>pl.score)){
+    const tb=h('table',{class:'score'},h('tr',{},h('th',{},'Pemain'),h('th',{},'Skor')));
+    S.players.forEach(pl=>tb.append(h('tr',{},h('td',{},pl.name),h('td',{class:'n'},pl.score))));
+    p.append(tb);
+  }
+  return p;
+}
+function rulesPanel(){
+  return h('details',{class:'panel'},h('summary',{},'Cara main singkat'),
+    h('ol',{class:'rules'},
+      h('li',{},'Tiap pemain mendapat ',h('b',{},'4 kartu tertutup'),' (2×2). Intip 2 kartu bawahmu sekali, lalu hafalkan.'),
+      h('li',{},'Di giliranmu, ambil dari ',h('b',{},'tumpukan'),' atau ',h('b',{},'buangan'),'. Tukar ke gridmu, atau buang.'),
+      h('li',{},'Kartu dari tumpukan yang langsung dibuang memakai kekuatannya: ',h('b',{},'7/8'),' intip kartumu, ',h('b',{},'9/10'),' intip kartu lawan, ',h('b',{},'J/Q'),' tukar buta, ',h('b',{},'K hitam'),' intip dua lalu boleh tukar.'),
+      h('li',{},h('b',{},'Banting'),' kapan saja: jika angka kartu teratas buangan sama dengan kartu yang kamu ingat, tekan Banting lalu ketuk kartu itu. Salah banting = 1 kartu hukuman. Membanting kartu lawan berarti kamu memberinya 1 kartumu.'),
+      h('li',{},'Yakin totalmu terendah? Serukan ',h('b',{},'Cambio'),' di awal giliran. Pemain lain mendapat satu giliran terakhir, lalu semua kartu dibuka.')),
+    h('div',{class:'values'},...[['A','1'],['2–10','sesuai angka'],['J / Q','10'],['K hitam','10'],['K merah','−1'],['Joker','0']].map(([a,b])=>h('div',{},h('span',{},a),h('b',{},b)))),
+    h('p',{class:'muted small'},'Skor ronde: total terendah menang dan mendapat 0 poin; yang lain menambahkan totalnya. Seri dengan pemanggil Cambio dimenangkan yang bukan pemanggil. Pemanggil yang kalah mendapat +10. Pemain yang mencapai 100 poin kalah.'));
+}
+function tableView(){
+  const S=state,i=myIdx(),n=S.players.length,end=S.phase==='roundEnd';
+  const out=[];
+  const order=[];for(let k=1;k<=n;k++){const o=i<0?(k-1):(i+k)%n;if(o!==i)order.push(o);}
+  const opps=h('div',{class:'opps'});
+  for(const o of order){
+    const pl=S.players[o];const isTurn=S.phase==='play'&&S.turn===o;
+    opps.append(h('div',{class:'opp'+(isTurn?' turn':'')},
+      h('div',{class:'who'},isTurn?h('span',{class:'dot'}):null,h('b',{},pl.name),h('span',{class:'pts'},pl.score),
+        S.cambio&&S.cambio.by===o?h('span',{class:'chip cambio'},'Cambio'):null),
+      gridEl(S,o,end,null),
+      end?h('div',{class:'total'},'Total '+gridSum(pl.grid)):null));
+  }
+  out.push(opps);
+  // center
+  const top=S.discard[S.discard.length-1];
+  const center=h('div',{class:'center'});
+  center.append(h('div',{class:'pile'},cardEl(S.deck.length?{}:null,false),h('span',{class:'lbl'},'Tumpukan · '+S.deck.length)));
+  const topLocked=top&&S.slapLock===top.id;
+  center.append(h('div',{class:'pile'},cardEl(top||null,true),h('span',{class:'lbl'},top?('Buangan'+(topLocked?' · terkunci':' · bisa dibanting')):'Buangan')));
+  if(S.phase==='play'&&S.ts.stage==='drawn'){
+    const mineDraw=S.turn===i;
+    center.append(h('div',{class:'pile drawn'},cardEl(S.ts.card,mineDraw),h('span',{class:'lbl'},mineDraw?'Kartumu':('Dipegang '+nm(S,S.turn)))));
+  }
+  out.push(center);
+  const logs=S.log.slice(-3);
+  out.push(h('div',{class:'log','aria-live':'polite'},...logs.map(l=>h('div',{},l.t))));
+  if(i>=0){
+    const pl=S.players[i];const isTurn=S.phase==='play'&&S.turn===i;
+    const peekSlots=S.phase==='peek'&&!pl.ready?[2,3]:null;
+    out.push(h('div',{class:'mine'+(isTurn?' turn':'')},
+      h('div',{class:'who'},isTurn?h('span',{class:'dot'}):null,h('b',{},pl.name+' (kamu)'),h('span',{class:'pts'},pl.score),
+        S.cambio&&S.cambio.by===i?h('span',{class:'chip cambio'},'Cambio'):null),
+      gridEl(S,i,end,peekSlots),
+      end?h('div',{class:'total'},'Total '+gridSum(pl.grid)):null));
+  }else{
+    out.push(h('p',{class:'muted small',style:'text-align:center'},'Kamu sedang menonton. Kamu bisa duduk setelah ronde ini selesai.'));
+  }
+  return out;
+}
+function fitDock(px){document.getElementById('app').style.paddingBottom=(px+24)+'px';document.documentElement.style.setProperty('--dockh',px+'px');}
+function hideDock(){document.getElementById('dock').hidden=true;fitDock(0);}
+function renderDock(){
+  const S=state,i=myIdx(),d=document.getElementById('dock');
+  const inner=h('div',{class:'dock-in'});
+  const isHost=S.hostId===meId;
+  const btns=h('div',{class:'row'});
+  let say='';
+  if(S.phase==='peek'){
+    const pl=S.players[i];
+    if(i<0)say='Pemain sedang menghafal kartu.';
+    else if(!pl.ready){say='Hafalkan dua kartu bawahmu. Setelah kamu tekan Siap, kartu itu ditutup.';btns.append(h('button',{class:'btn primary',onclick:()=>act('ready')},'Siap, sudah hafal'));}
+    else say='Menunggu: '+S.players.filter(p=>!p.ready).map(p=>p.name).join(', ');
+  }else if(S.phase==='roundEnd'){
+    const r=S.result;
+    inner.append(resultTable(S));
+    say=r.callerFail?`${nm(S,r.caller)} salah memanggil Cambio (+10).`:'';
+    const lost=S.players.filter(p=>p.score>=100);
+    if(lost.length)say+=` ${lost.map(p=>p.name).join(', ')} mencapai 100 poin dan kalah.`;
+    if(isHost){
+      btns.append(h('button',{class:'btn primary',onclick:()=>act('start')},'Ronde berikutnya'),h('button',{class:'btn sm',onclick:()=>act('toLobby')},'Ke lobi'));
+      if(lost.length)btns.append(h('button',{class:'btn sm',onclick:()=>act('resetScores')},'Ulang skor'));
+    }else btns.append(h('span',{class:'muted small'},'Menunggu host memulai ronde berikutnya.'));
+  }else if(S.phase==='play'){
+    const mine=S.turn===i,st=S.ts.stage;
+    const gv=S.gives.find(g=>g.from===i);
+    if(gv)inner.append(h('div',{class:'give'},`Banting berhasil. Ketuk salah satu kartumu untuk diberikan kepada ${nm(S,gv.to)}.`));
+    if(!mine)say=`Giliran ${nm(S,S.turn)}.`+(S.cambio?` Cambio dipanggil ${nm(S,S.cambio.by)}.`:'');
+    else if(st==='start'){
+      say=S.cambio?'Giliran terakhirmu.':'Giliranmu. Ambil satu kartu.';
+      btns.append(h('button',{class:'btn primary',onclick:()=>act('drawDeck')},'Ambil tumpukan'),
+        h('button',{class:'btn',disabled:S.discard.length?null:true,onclick:()=>act('takeDiscard')},'Ambil buangan'));
+      if(!S.cambio)btns.append(h('button',{class:'btn danger',onclick:()=>act('cambio')},'Cambio!'));
+    }else if(st==='drawn'){
+      const c=S.ts.card,pw=power(c);
+      if(S.ts.from==='deck'){
+        say=`Kamu memegang ${label(c)} (nilai ${val(c)}). Ketuk kartumu untuk menukar, atau buang.`;
+        btns.append(h('button',{class:'btn primary',onclick:()=>act('discard')},pw?`Buang & ${POWER_TXT[pw]}`:'Buang'));
+      }else say=`Kamu memegang ${label(c)} dari buangan. Ketuk salah satu kartumu untuk menukar.`;
+    }else if(st==='power'){
+      const pw=S.ts.power,n=S.ts.picks.length;
+      say={peekOwn:'Ketuk salah satu kartumu untuk diintip.',peekOther:'Ketuk salah satu kartu lawan untuk diintip.',
+        blindSwap:n?'Sekarang ketuk kartu milik pemain lain untuk ditukar.':'Tukar buta: ketuk kartu pertama (milik siapa saja).',
+        kingLook:n?'Ketuk kartu kedua (dari pemilik lain; salah satu harus milikmu).':'K hitam: ketuk kartu pertama untuk dilihat.'}[pw];
+      btns.append(h('button',{class:'btn sm',onclick:()=>act('skipPower')},'Lewati kekuatan'));
+    }else if(st==='kingDecide')say='Lihat kedua kartu, lalu putuskan.';
+    if(i>=0&&!mine||(mine&&st!=='power'&&st!=='kingDecide')){
+      if(i>=0)btns.append(h('button',{class:'btn slap'+(ui.slap?' on':''),'aria-pressed':ui.slap?'true':'false',onclick:()=>{ui.slap=!ui.slap;render();}},ui.slap?'Batal banting':'Banting!'));
+    }
+    if(ui.slap)say='Ketuk kartu (milikmu atau lawan) yang angkanya sama dengan buangan teratas.';
+    if(isHost&&!mine)btns.append(h('button',{class:'btn sm',title:'Pakai jika pemain terputus',onclick:()=>act('forceSkip')},'Lewati giliran'));
+  }
+  if(say)inner.prepend(h('div',{class:'say'},say));
+  inner.append(btns);
+  d.replaceChildren(inner);d.hidden=false;
+  requestAnimationFrame(()=>fitDock(d.offsetHeight));
+}
+function resultTable(S){
+  const r=S.result;
+  const tb=h('table',{class:'score'},h('tr',{},h('th',{},'Pemain'),h('th',{class:'n'},'Total'),h('th',{class:'n'},'Skor')));
+  S.players.forEach((p,k)=>{const w=r.winners.includes(k);
+    tb.append(h('tr',{},h('td',{class:w?'win':null},p.name+(w?' · menang':'')+(r.caller===k?' · Cambio':'')),h('td',{class:'n'},r.totals[k]!=null?r.totals[k]:'–'),h('td',{class:'n'},p.score)));});
+  return tb;
+}
+function renderOverlay(){
+  const ov=document.getElementById('ov');const S=state,i=myIdx();
+  let panel=null;
+  if(S&&S.phase==='play'&&S.turn===i&&S.ts.stage==='kingDecide'){
+    const cs=S.ts.picks.map(p=>h('div',{},cardEl(S.players[p.o].grid[p.slot],true),h('div',{class:'cap'},(p.o===i?'Kartumu':nm(S,p.o))+' · '+pos(p.slot))));
+    panel=h('div',{class:'panel'},h('h2',{},'K hitam: tukar?'),h('div',{class:'cards'},...cs),
+      h('div',{class:'row'},h('button',{class:'btn primary',onclick:()=>act('kingDecide',true)},'Tukar'),h('button',{class:'btn',onclick:()=>act('kingDecide',false)},'Jangan tukar')));
+  }else if(ui.peek&&S){
+    const cs=ui.peek.cards.map(p=>h('div',{},cardEl(p.card,true),h('div',{class:'cap'},(p.o===i?'Kartumu':nm(S,p.o))+' · '+pos(p.slot))));
+    panel=h('div',{class:'panel'},h('h2',{},ui.peek.title),h('div',{class:'cards'},...cs),h('p',{class:'muted small'},'Hafalkan, lalu tutup.'),
+      h('button',{class:'btn primary',onclick:()=>{ui.peek=null;render();}},'Tutup'));
+  }
+  if(panel){ov.replaceChildren(panel);ov.hidden=false;}else{ov.hidden=true;ov.replaceChildren();}
+}
+function copy(t){try{navigator.clipboard.writeText(t).then(()=>toast('Kode disalin.'),()=>toast('Salin manual: '+t));}catch(e){toast('Salin manual: '+t);}}
+
+/* ================= NETWORK ================= */
+const net={code:null,push(){}};
+
+/* Mode A: shared table inside Claude (db capability) */
+async function startDb(db,user){
+  mode='db';
+  let id=null;try{id=user?await user.id():null;}catch(e){}
+  meId=id||localId();
+  const ref=db.doc('tables/main');
+  let writing=false,queued=null;
+  net.push=async(S)=>{queued=S;if(writing)return;writing=true;
+    while(queued){const s=queued;queued=null;
+      try{await ref.set(s);}catch(e){
+        if(e&&e.code==='unavailable'){await new Promise(r=>setTimeout(r,500+Math.random()*700));try{await ref.set(s);continue;}catch(e2){}}
+        toast(e&&e.code==='invalid_argument'?'Kamu belum punya akses bermain di meja ini. Minta pemilik mengundangmu sebagai Editor.':'Gagal menyimpan langkah. Coba lagi.');
+        try{const snap=await ref.get();adopt(snap.exists?clone(snap.data()):initState());}catch(e3){}
+      }}
+    writing=false;};
+  ref.onSnapshot(snap=>{
+    if(!snap.exists){if(!state)adopt(initState());return;}
+    const s=clone(snap.data());
+    if(!state||s.v>=state.v||!snap.metadata.hasPendingWrites)adopt(s);
+  },()=>{toast('Koneksi meja terputus. Muat ulang halaman.');});
+  if(!state)render();
+}
+
+/* Mode B: standalone file, free peer-to-peer rooms (PeerJS) */
+const P2P={peer:null,conns:[],host:false,hostConn:null};
+function loadPeer(){if(window.Peer)return Promise.resolve();return new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.append(s);});}
+const randCode=()=>Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
+function p2pSend(conn,s){try{if(conn&&conn.open)conn.send({t:'state',s});}catch(e){}}
+async function hostRoom(){
+  if(!ui.name.trim())return toast('Isi nama dulu.');
+  try{await loadPeer();}catch(e){return toast('Tidak bisa memuat modul online. Cek koneksi internet.');}
+  const code=randCode();const peer=new Peer('cambio-tbl-'+code,{debug:0});
+  P2P.peer=peer;P2P.host=true;
+  peer.on('open',()=>{net.code=code;mode='p2p';state=initState();act('join',ui.name);});
+  peer.on('connection',conn=>{
+    P2P.conns.push(conn);
+    conn.on('data',m=>{
+      if(!m)return;
+      if(m.t==='hello'){p2pSend(conn,state);return;}
+      if(m.t==='state'){
+        if(m.s.v>state.v){adopt(m.s);for(const c of P2P.conns)if(c!==conn)p2pSend(c,m.s);}
+        else p2pSend(conn,state);
+      }});
+    conn.on('close',()=>{P2P.conns=P2P.conns.filter(c=>c!==conn);});
+  });
+  peer.on('error',e=>{if(e.type==='unavailable-id'){peer.destroy();hostRoom();}else toast('Koneksi gagal ('+e.type+').');});
+  net.push=(S)=>{for(const c of P2P.conns)p2pSend(c,S);};
+}
+async function joinRoom(code){
+  code=String(code||'').trim().toUpperCase();
+  if(!ui.name.trim())return toast('Isi nama dulu.');
+  if(code.length<5)return toast('Kode room terdiri dari 5 karakter.');
+  try{await loadPeer();}catch(e){return toast('Tidak bisa memuat modul online. Cek koneksi internet.');}
+  const peer=new Peer({debug:0});P2P.peer=peer;
+  toast('Menghubungkan…');
+  peer.on('open',()=>{
+    const conn=peer.connect('cambio-tbl-'+code,{reliable:true,serialization:'json'});P2P.hostConn=conn;
+    let first=true;
+    conn.on('open',()=>conn.send({t:'hello'}));
+    conn.on('data',m=>{if(!m||m.t!=='state')return;net.code=code;mode='p2p';adopt(m.s);
+      if(first){first=false;if(myIdx()<0)act('join',ui.name);}});
+    conn.on('close',()=>{toast('Koneksi ke host terputus.');});
+  });
+  peer.on('error',e=>{toast(e.type==='peer-unavailable'?'Room tidak ditemukan. Cek kodenya.':'Koneksi gagal ('+e.type+').');});
+  net.push=(S)=>p2pSend(P2P.hostConn,S);
+}
+function p2pSetupView(){
+  const code=h('input',{type:'text',id:'codeInput',maxlength:'5',placeholder:'Contoh: K7QMX',autocomplete:'off',value:ui.code||'',style:'text-transform:uppercase;letter-spacing:.15em'});
+  code.addEventListener('input',()=>{ui.code=code.value;});
+  return h('div',{class:'panel'},
+    h('h2',{},'Main online dengan teman'),
+    h('p',{class:'muted small'},'Satu orang membuat room dan membagikan kodenya. Teman membuka file yang sama di perangkatnya, lalu bergabung dengan kode itu. Gratis, tanpa akun.'),
+    nameField(),
+    h('div',{class:'row'},h('button',{class:'btn primary',onclick:hostRoom},'Buat room baru')),
+    h('label',{class:'field',for:'codeInput'},'Punya kode room?',code),
+    h('div',{class:'row'},h('button',{class:'btn',onclick:()=>joinRoom(code.value)},'Gabung')));
+}
+function noAccessView(){
+  return h('div',{class:'panel'},h('h2',{},'Meja ini belum bisa dibuka'),
+    h('p',{class:'muted'},'Kamu belum mendapat akses untuk bermain di meja ini. Minta pemilik meja mengundangmu sebagai Editor lewat tombol Share, lalu buka ulang tautannya.'));
+}
+
+/* ================= BOOT ================= */
+(async function boot(){
+  const cl=window.claude;
+  if(cl&&typeof cl.use==='function'){
+    const [db,user]=await Promise.all([cl.use('db'),cl.use('user')]);
+    if(db)return startDb(db,user);
+    mode='noaccess';render();return;
+  }
+  meId=localId();mode='p2p-setup';render();
+})();
+</script>
+</body></html>
